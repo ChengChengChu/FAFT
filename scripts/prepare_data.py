@@ -1,5 +1,6 @@
 import torch
 import argparse
+import pandas as pd
 from tqdm import tqdm
 from argparse import ArgumentParser
 import csv
@@ -43,27 +44,34 @@ def main() :
     with open(args.filename, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            qa_pairs.append([row['question'], row['answer']])
+            qa_pairs.append([row['question'].strip(), row['answer'].strip()])
     
-
+    # import pdb
+    # pdb.set_trace()
     model, tokenizer = create_model(args.model_id)
     model.eval()
     written_data = []
+    col = ['sentence']
+
     with torch.no_grad():
         for i in tqdm(range(len(qa_pairs))) :
-            input_text = create_model_input(qa_pairs[i][0], qa_pairs[i][i])
+            
+            input_text = create_model_input(qa_pairs[i][0], qa_pairs[i][1])
             input_text = get_prompt(input_text)
             input_ids = tokenizer.encode(input_text, return_tensors='pt').to('cuda')
-            output = model.generate(input_text)
-            written_data.append(tokenizer.decode(output[0]).strip())
+            output = model.generate(input_ids, max_new_tokens=512)
+            tmp_reply = tokenizer.decode(output[0], skip_special_tokens=True).split('[/INST]')[-1].strip()
+            written_data.append(tmp_reply.split(':')[-1].strip())
     
+    df = pd.DataFrame(columns=col, data=written_data)
+    df.to_csv(args.save_path)
     print(f"[INFO]: Generated data save in {args.save_path}.")
     
 
 def set_arguments(parser):
-    parser.add_argument("--filename", type=str, default="") 
+    parser.add_argument("--filename", type=str, default="/work/u5273929/tmp_RLCD/tmp/MedQA_1000.csv") 
     parser.add_argument("--model_id", type=str, default="meta-llama/Llama-2-7b-chat-hf")
-    parser.add_argument("--save_path", type=str, default="MedQA_rewrrite.csv") # save path
+    parser.add_argument("--save_path", type=str, default="MedQA_rewrite.csv") # save path
     
 
     args = parser.parse_args()
