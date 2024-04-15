@@ -13,7 +13,7 @@ from transformers import (
 B_INST, E_INST = "<s>[INST]", "[/INST]"
 B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 DEFAULT_SYSTEM_PROMPT = """\
-Please rewrite the following question and answer into a single sentence without omitting any information from the question."""
+Please rewrite the following question and answer pair in your own style. The revised format should be as follows: Question: [Your rewritten question], Answer: [Your rewritten answer]."""
 SYSTEM_PROMPT = B_SYS + DEFAULT_SYSTEM_PROMPT + E_SYS
 
 def get_prompt(instruction):
