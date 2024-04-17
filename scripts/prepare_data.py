@@ -13,7 +13,7 @@ from transformers import (
 B_INST, E_INST = "<s>[INST]", "[/INST]"
 B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 DEFAULT_SYSTEM_PROMPT = """\
-Please rewrite the following question and answer pair in your own style. The revised format should be as follows: Question: [Your rewritten question], Answer: [Your rewritten answer]."""
+Please rewrite the following four-option multiple-choice question in your own style, with format Question:[Your questions]\nOptions:[Your options]\nAnswer:[Your answer], and the format of options should be: A. :[option A]\n B. :[option B]\n C. :[option C]\n D. :[option D]."""
 SYSTEM_PROMPT = B_SYS + DEFAULT_SYSTEM_PROMPT + E_SYS
 
 def get_prompt(instruction):
@@ -32,36 +32,42 @@ def create_model(model_id) :
 
     return model, tokenizer
 
-def create_model_input(question, answer) :
-    return f"Here is the question answer pair:\nQuestion: {question}\nAnswer: {answer}."
+# def create_model_input(question, answer) :
+#     return f"Here is the question answer pair:\nQuestion: {question}\nAnswer: {answer}."
 
 
 def main() :
     parser = ArgumentParser()
     args  = set_arguments(parser)
 
-    qa_pairs = []
-    with open(args.filename, newline='') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            qa_pairs.append([row['question'].strip(), row['answer'].strip()])
+    # questions = []
+    # with open(args.filename, newline='') as csvfile:
+    #     reader = csv.DictReader(csvfile)
+    #     for row in reader:
+    #         qa_pairs.append([row['question'].strip(), row['answer'].strip()])
+    dataset = pd.read_csv(r"/work/u5273929/tmp_RLCD/tmp/tmp.csv")
+    dataset['text'] = 'Question: ' + dataset['question'] + '\n' + dataset['options'] + '\nAnswers: ' + dataset['label'] + '. ' + dataset['answer']
     
     # import pdb
     # pdb.set_trace()
     model, tokenizer = create_model(args.model_id)
     model.eval()
     written_data = []
-    col = ['sentence']
+    col = ['text']
 
     with torch.no_grad():
-        for i in tqdm(range(len(qa_pairs))) :
+        for i in tqdm(range(len(dataset['text']))) :
             
-            input_text = create_model_input(qa_pairs[i][0], qa_pairs[i][1])
-            input_text = get_prompt(input_text)
+            # input_text = create_model_input(qa_pairs[i][0], qa_pairs[i][1])
+            input_text = get_prompt(dataset['text'][i])
+            # import pdb
+            # pdb.set_trace()
             input_ids = tokenizer.encode(input_text, return_tensors='pt').to('cuda')
-            output = model.generate(input_ids, max_new_tokens=512)
+            output = model.generate(input_ids, max_new_tokens=2048)
             tmp_reply = tokenizer.decode(output[0], skip_special_tokens=True).split('[/INST]')[-1].strip()
-            written_data.append(tmp_reply.split(':')[-1].strip())
+            written_data.append(tmp_reply)
+
+            # if i >= 3 : break
     
     df = pd.DataFrame(columns=col, data=written_data)
     df.to_csv(args.save_path)
