@@ -20,7 +20,7 @@ from transformers import (
 def set_env():
     os.environ['HUGGINGFACE_HUB_CACHE'] = '/work/u5273929/huggingface_hub'
     os.environ['HF_HOME'] = '/work/u5273929/huggingface_hub'
-    os.environ['WANDB_CACHE_DIR']='/work/u5273929/'
+    # os.environ['WANDB_CACHE_DIR']='/work/u5273929/'
     os.environ['WANDB_PROJECT']='chatbot'
     os.environ['HF_DATASETS_CACHE']='/work/u5273929/huggingface_hub'
 
@@ -76,10 +76,12 @@ def main() :
     output_dir = os.path.join(dest_dict, args.output_path)
 
     ### Prepare training dataset
-    dataset = pd.read_csv(r"/work/u5273929/tmp_RLCD/tmp/MedQA_1000_reformat.csv")
-    dataset['text'] = '<s>[INST] ' + dataset['Question'] + ' [/INST] ' + dataset['Answer'] + ' </s>'
+    dataset = pd.read_csv(r"/work/u5273929/tmp_RLCD/tmp/medqa_train_without_rewrite.csv")
+    # dataset['text'] = 'Question: ' + dataset['Question'] + '\nAnswer: ' + dataset['Answer']
     train_dataset = Dataset.from_pandas(dataset[['text']])
 
+    # import pdb
+    # pdb.set_trace()
     eval_dataset = None
 
     training_args = TrainingArguments(
@@ -101,7 +103,7 @@ def main() :
         bf16=torch.cuda.is_bf16_supported(),
         logging_steps=5,
         report_to=args.report_to,
-        run_name=args.wandb_run_name,
+        run_name='llama2-chat-without-rewrite-new',
         save_strategy='epoch',
         output_dir=args.output_path,
     )
