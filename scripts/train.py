@@ -76,10 +76,13 @@ def main() :
     output_dir = os.path.join(dest_dict, args.output_path)
 
     ### Prepare training dataset
-    dataset = pd.read_csv(r"/work/u5273929/tmp_RLCD/tmp/medqa_train_without_rewrite.csv")
+    dataset = pd.read_csv(r"/work/u5273929/tmp_RLCD/tmp/PFFT/data/data_clean.csv")
     # dataset['text'] = 'Question: ' + dataset['Question'] + '\nAnswer: ' + dataset['Answer']
-    train_dataset = Dataset.from_pandas(dataset[['text']])
+    train_dataset = Dataset.from_pandas(dataset[['llama2 output']])
 
+    # for x in train_dataset:
+    #     print(x)
+    #     break
     # import pdb
     # pdb.set_trace()
     eval_dataset = None
@@ -103,7 +106,7 @@ def main() :
         bf16=torch.cuda.is_bf16_supported(),
         logging_steps=5,
         report_to=args.report_to,
-        run_name='llama2-chat-without-rewrite-new',
+        run_name='llama2-chat-with-rewrite',
         save_strategy='epoch',
         output_dir=args.output_path,
     )
@@ -123,7 +126,7 @@ def main() :
     trainer = SFTTrainer(
         model,
         train_dataset=train_dataset,
-        dataset_text_field="text",
+        dataset_text_field="llama2 output",
         # formatting_func=format_alpaca_function if 'alpaca' in args.dataset else format_dolly_function,
         # data_collator=collator,
         max_seq_length=args.max_seq_length,
