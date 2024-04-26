@@ -77,8 +77,8 @@ def main() :
 
     ### Prepare training dataset
     dataset = pd.read_csv(r"/work/u5273929/tmp_RLCD/tmp/PFFT/data/data_clean.csv")
-    # dataset['text'] = 'Question: ' + dataset['Question'] + '\nAnswer: ' + dataset['Answer']
-    train_dataset = Dataset.from_pandas(dataset[['llama2 output']])
+    dataset['text'] = "[INST] " + dataset['input'] + " [/INST] " + dataset['llama2 output'] + ' </s>'
+    train_dataset = Dataset.from_pandas(dataset[['text']])
 
     # for x in train_dataset:
     #     print(x)
@@ -106,12 +106,12 @@ def main() :
         bf16=torch.cuda.is_bf16_supported(),
         logging_steps=5,
         report_to=args.report_to,
-        run_name='llama2-chat-with-rewrite',
+        run_name='llama2-chat-with-rewrite-full-model',
         save_strategy='epoch',
         output_dir=args.output_path,
     )
 
-    if True:
+    if False:
         peft_config = LoraConfig(
             r=args.lora_r,
             lora_alpha=2 * args.lora_r,
@@ -126,7 +126,7 @@ def main() :
     trainer = SFTTrainer(
         model,
         train_dataset=train_dataset,
-        dataset_text_field="llama2 output",
+        dataset_text_field="text",
         # formatting_func=format_alpaca_function if 'alpaca' in args.dataset else format_dolly_function,
         # data_collator=collator,
         max_seq_length=args.max_seq_length,
